@@ -2,74 +2,83 @@
 
 namespace App\Domain\Task\Entities;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Domain\Task\ValueObjects\TaskStatus;
+use DateTimeImmutable;
 
-/**
- * Entidad de dominio Task (tarea)
- *
- * Representa una tarea con atributos básicos y reglas simples.
- * Pertenece a un usuario (asignado) y puede tener estados.
- */
-class Task extends Model
+class Task
 {
-    use HasFactory;
+    private ?int $id;
+    private string $title;
+    private string $description;
+    private TaskStatus $status;
+    private ?int $userId;
+    private DateTimeImmutable $createdAt;
 
-    protected $table = 'tasks';
-
-    protected $fillable = [
-        'title',
-        'description',
-        'status',
-        'user_id',
-    ];
-
-    // Estados válidos del dominio
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_COMPLETED = 'completed';
-
-    /**
-     * Relación con usuario (si existe)
-     */
-    public function user()
-    {
-        return $this->belongsTo(\App\Domain\Entities\User::class);
+    public function __construct(
+        ?int $id,
+        string $title,
+        string $description,
+        TaskStatus $status,
+        ?int $userId = null,
+        ?DateTimeImmutable $createdAt = null
+    ) {
+        $this->id = $id;
+        $this->title = $title;
+        $this->description = $description;
+        $this->status = $status;
+        $this->userId = $userId;
+        $this->createdAt = $createdAt ?? new DateTimeImmutable();
     }
 
-    /**
-     * Determina si la tarea está completada
-     */
-    public function isCompleted(): bool
+    // --- Getters ---
+    public function getId(): ?int
     {
-        return $this->status === self::STATUS_COMPLETED;
+        return $this->id;
     }
 
-    /**
-     * Determina si la tarea puede ser marcada como completada
-     */
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    public function getStatus(): TaskStatus
+    {
+        return $this->status;
+    }
+
+    public function getUserId(): ?int
+    {
+        return $this->userId;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    // --- Behavior (Domain Logic) ---
+    public function assignTo(int $userId): void
+    {
+        $this->userId = $userId;
+    }
+
     public function canBeCompleted(): bool
     {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_IN_PROGRESS]);
+        return $this->status->equals(new TaskStatus(TaskStatus::PENDING))
+            || $this->status->equals(new TaskStatus(TaskStatus::IN_PROGRESS));
     }
 
-    /**
-     * Cambia el estado de la tarea a completado
-     */
     public function markAsCompleted(): void
     {
         if (! $this->canBeCompleted()) {
             throw new \DomainException('La tarea no puede completarse desde su estado actual.');
         }
 
-        $this->status = self::STATUS_COMPLETED;
-    }
-
-    /**
-     * Asigna un usuario a la tarea
-     */
-    public function assignTo(int $userId): void
-    {
-        $this->user_id = $userId;
+        $this->status = new TaskStatus(TaskStatus::COMPLETED);
     }
 }

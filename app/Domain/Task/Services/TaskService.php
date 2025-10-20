@@ -2,9 +2,11 @@
 
 namespace App\Domain\Task\Services;
 
-use App\Domain\Task\Repositories\TaskRepositoryInterface;
 use App\Domain\Task\Entities\Task;
+use App\Domain\User\Entities\User;
+use App\Domain\Task\Repositories\TaskRepositoryInterface;
 use App\Domain\Task\Events\TaskCompleted;
+use App\Domain\Task\ValueObjects\TaskStatus;
 use Illuminate\Support\Facades\Event;
 
 /**
@@ -13,47 +15,43 @@ use Illuminate\Support\Facades\Event;
 class TaskService
 {
     public function __construct(
-        protected TaskRepositoryInterface $tasks
+        protected TaskRepositoryInterface $taskRepository
     ) {}
 
     /**
-     * Asignar una tarea a un usuario
+     * Crea una nueva tarea en memoria (no la persiste).
      */
-    public function assignTask(int $taskId, int $userId): Task
+    public function createTask(string $title, string $description, int $userId): Task
     {
-        $task = $this->tasks->find($taskId);
-        if (! $task) {
-            throw new \RuntimeException("Tarea no encontrada.");
-        }
-
-        $task->assignTo($userId);
-        $this->tasks->update($task, ['user_id' => $userId]);
-
-        return $task;
+        return new Task(
+            id: 0, // aún no persistida
+            title: $title,
+            description: $description,
+            status: new TaskStatus(TaskStatus::PENDING),
+            userId: $userId
+        );
     }
 
     /**
-     * Completar una tarea
+     * Asigna una tarea a un usuario (modifica la entidad).
      */
-    public function completeTask(int $taskId): Task
+    public function assignToUser(Task $task, User $user): void
     {
-        $task = $this->tasks->find($taskId);
-        if (! $task) {
-            throw new \RuntimeException("Tarea no encontrada.");
-        }
+        $task->assignTo($user->getId());
+    }
 
+    /**
+     * Marca una tarea como completada.
+     */
+    public function completeTask(Task $task): void
+    {
         if (! $task->canBeCompleted()) {
             throw new \DomainException("La tarea no puede completarse.");
         }
 
         $task->markAsCompleted();
 
-        // Persistimos el cambio usando el repositorio
-        $this->tasks->update($task, ['status' => $task->status]);
-
-        // Evento de dominio
+        // Emitir evento de dominio
         Event::dispatch(new TaskCompleted($task));
-
-        return $task;
     }
 }

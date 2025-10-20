@@ -46,4 +46,9 @@ final class TaskStatus
     {
         return $this->value;
     }
+
+    public function equals(TaskStatus $other): bool
+    {
+        return $this->value === $other->value();
+    }
 }
