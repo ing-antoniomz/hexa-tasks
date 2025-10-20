@@ -2,24 +2,29 @@
 
 namespace App\Application\Task\UseCases;
 
+use App\Application\Task\DTOs\CreateTaskDTO;
 use App\Domain\Task\Repositories\TaskRepositoryInterface;
+use App\Domain\Task\Services\TaskService;
 use App\Domain\Task\Entities\Task;
-use App\Domain\Task\ValueObjects\TaskStatus;
 
 class CreateTaskUseCase
 {
-    private TaskRepositoryInterface $repository;
+    public function __construct(
+        private TaskRepositoryInterface $taskRepository,
+        private TaskService $taskService
+    ) {}
 
-    public function __construct(TaskRepositoryInterface $repository)
+    public function execute(CreateTaskDTO $dto): Task
     {
-        $this->repository = $repository;
-    }
+        // 1. Crear la entidad desde el DTO
+        $task = $this->taskService->createTask($dto->title, $dto->description, $dto->userId);
 
-    public function execute(array $data): Task
-    {
-        // Aquí puedes transformar los datos si quieres
-        $data['status'] = $data['status'] ?? TaskStatus::PENDING;
-
-        return $this->repository->create($data);
+        // 2. Guardar la tarea en el repositorio
+        return $this->taskRepository->create([
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => $task->getStatus()->value(),
+            'user_id' => $task->getUserId(),
+        ]);
     }
 }
