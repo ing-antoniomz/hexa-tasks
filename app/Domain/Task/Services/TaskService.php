@@ -37,9 +37,14 @@ class TaskService
 
     public function completeTask(Task $task): Task
     {
+        if ($task->isCompleted()) {
+            return $task;
+        }
+
         if (! $task->canBeCompleted()) {
             throw new \DomainException("La tarea no puede completarse.");
         }
+
 
         $task->markAsCompleted();
 

@@ -2,8 +2,9 @@
 
 namespace App\Application\Task\UseCases;
 
-use App\Domain\Task\Repositories\TaskRepositoryInterface;
+use App\Domain\Task\Entities\Task;
 use App\Domain\Task\Services\TaskService;
+use App\Domain\Task\Repositories\TaskRepositoryInterface;
 
 class CompleteTaskUseCase
 {
@@ -12,16 +13,14 @@ class CompleteTaskUseCase
         private TaskService $taskService
     ) {}
 
-    public function execute(int $taskId): bool
+    public function execute(int $taskId): Task
     {
         $task = $this->taskRepository->find($taskId);
         if (!$task) {
             throw new \Exception("Task not found");
         }
 
-        $this->taskService->completeTask($task);
-        return $this->taskRepository->update($task, [
-            'status' => $task->getStatus()->value()
-        ]);
+        return $this->taskService->completeTask($task);
+
     }
 }

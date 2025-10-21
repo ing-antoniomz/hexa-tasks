@@ -73,6 +73,11 @@ class Task
             || $this->status->equals(new TaskStatus(TaskStatus::IN_PROGRESS));
     }
 
+    public function isCompleted(): bool
+    {
+        return $this->status->equals(new TaskStatus(TaskStatus::COMPLETED));
+    }
+
     public function markAsCompleted(): void
     {
         if (! $this->canBeCompleted()) {
