@@ -17,14 +17,14 @@ class Task
     public function __construct(
         ?int $id,
         string $title,
-        string $description,
+        ?string $description,
         TaskStatus $status,
         ?int $userId = null,
         ?DateTimeImmutable $createdAt = null
     ) {
         $this->id = $id;
         $this->title = $title;
-        $this->description = $description;
+        $this->description = $description ?? '';
         $this->status = $status;
         $this->userId = $userId;
         $this->createdAt = $createdAt ?? new DateTimeImmutable();
