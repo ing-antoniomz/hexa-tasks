@@ -10,6 +10,7 @@ use App\Application\Task\DTOs\CreateTaskDTO;
 use App\Infrastructure\Http\Requests\CreateTaskRequest;
 use App\Infrastructure\Http\Requests\AssignTaskRequest;
 use App\Infrastructure\Http\Resources\TaskResource;
+use App\Domain\User\Repositories\UserRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 
 class TaskController
@@ -18,7 +19,8 @@ class TaskController
         private CreateTaskUseCase $createTaskUseCase,
         private AssignTaskUseCase $assignTaskUseCase,
         private CompleteTaskUseCase $completeTaskUseCase,
-        private ListTasksUseCase $listTasksUseCase
+        private ListTasksUseCase $listTasksUseCase,
+        private UserRepositoryInterface $userRepository
     ) {}
 
     /**
@@ -62,7 +64,8 @@ class TaskController
      */
     public function assign(AssignTaskRequest $request, int $taskId): JsonResponse
     {
-        $task = $this->assignTaskUseCase->execute($taskId, $request->validated()['user_id']);
+        $userId = $request->validated()['user_id'];
+        $task = $this->assignTaskUseCase->execute($taskId, $userId);
         return response()->json(new TaskResource($task));
     }
 

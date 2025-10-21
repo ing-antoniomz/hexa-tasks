@@ -12,7 +12,7 @@ use App\Infrastructure\Http\Controllers\TaskController;
 Route::middleware('api')->group(function () {
     // CRUD básico (index, store, show, update, destroy)
     Route::apiResource('tasks', TaskController::class)
-        ->only(['index', 'store', 'show', 'update', 'destroy']);
+        ->only(['index', 'store', 'show'/* , 'update', 'destroy' */]);
 
     // Acciones de dominio
     Route::post('tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign');

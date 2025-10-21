@@ -8,6 +8,6 @@ interface TaskRepositoryInterface
 {
     public function create(array $data): Task;
     public function find(int $id): ?Task;
-    public function update(Task $task, array $data): bool;
+    public function update(Task $task, array $data): Task;
     public function all(): iterable;
 }

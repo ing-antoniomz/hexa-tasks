@@ -2,27 +2,32 @@
 
 namespace App\Application\Task\UseCases;
 
-use App\Domain\Task\Repositories\TaskRepositoryInterface;
+use App\Domain\Task\Entities\Task;
 use App\Domain\User\Entities\User;
 use App\Domain\Task\Services\TaskService;
+use App\Domain\Task\Repositories\TaskRepositoryInterface;
+use App\Domain\User\Repositories\UserRepositoryInterface;
 
 class AssignTaskUseCase
 {
     public function __construct(
+        private TaskService $taskService,
         private TaskRepositoryInterface $taskRepository,
-        private TaskService $taskService
+        private UserRepositoryInterface $userRepository
     ) {}
 
-    public function execute(int $taskId, User $user): bool
+    public function execute(int $taskId, int $userId): Task
     {
         $task = $this->taskRepository->find($taskId);
-        if (!$task) {
-            throw new \Exception("Task not found");
+        if (! $task) {
+            throw new \RuntimeException("Tarea no encontrada");
         }
 
-        $this->taskService->assignToUser($task, $user);
-        return $this->taskRepository->update($task, [
-            'user_id' => $user->getId()
-        ]);
+        $user = $this->userRepository->find($userId);
+        if (! $user) {
+            throw new \RuntimeException("Usuario no encontrado");
+        }
+
+        return $this->taskService->assignToUser($task, $user);
     }
 }

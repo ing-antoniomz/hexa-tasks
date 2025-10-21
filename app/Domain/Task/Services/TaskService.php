@@ -9,22 +9,16 @@ use App\Domain\Task\Events\TaskCompleted;
 use App\Domain\Task\ValueObjects\TaskStatus;
 use Illuminate\Support\Facades\Event;
 
-/**
- * Servicio de dominio para manejar la lógica de negocio de tareas.
- */
 class TaskService
 {
     public function __construct(
         protected TaskRepositoryInterface $taskRepository
     ) {}
 
-    /**
-     * Crea una nueva tarea en memoria (no la persiste).
-     */
     public function createTask(string $title, string $description, int $userId): Task
     {
         return new Task(
-            id: 0, // aún no persistida
+            id: 0,
             title: $title,
             description: $description,
             status: new TaskStatus(TaskStatus::PENDING),
@@ -32,18 +26,16 @@ class TaskService
         );
     }
 
-    /**
-     * Asigna una tarea a un usuario (modifica la entidad).
-     */
-    public function assignToUser(Task $task, User $user): void
+    public function assignToUser(Task $task, User $user): Task
     {
         $task->assignTo($user->getId());
+
+        return $this->taskRepository->update($task, [
+            'user_id' => $user->getId()
+        ]);
     }
 
-    /**
-     * Marca una tarea como completada.
-     */
-    public function completeTask(Task $task): void
+    public function completeTask(Task $task): Task
     {
         if (! $task->canBeCompleted()) {
             throw new \DomainException("La tarea no puede completarse.");
@@ -51,7 +43,12 @@ class TaskService
 
         $task->markAsCompleted();
 
-        // Emitir evento de dominio
-        Event::dispatch(new TaskCompleted($task));
+        $updatedTask = $this->taskRepository->update($task, [
+            'status' => $task->getStatus()->value()
+        ]);
+
+        Event::dispatch(new TaskCompleted($updatedTask));
+
+        return $updatedTask;
     }
 }
